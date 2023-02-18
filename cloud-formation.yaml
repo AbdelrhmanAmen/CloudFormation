@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a VPC with public and private subnets and instance
+
+# define resources
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/8
+
+  # create public subnet
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "eu-west-3a"
+      CidrBlock: 10.0.0.0/16
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+
+  # create private subnet
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "eu-west-3b"
+      CidrBlock: 10.10.0.0/16
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+
+  # create security group
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http & ssh to client host
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  # create gateway to access an instance in public subnet
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  # create route table
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  # create route record
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+  # link the route table to the public subnet
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PublicSubnetA
+
+  # create instance
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+        - Key: Name
+          Value: abdelrhman-instance
+      ImageId: "ami-00575c0cbc20caf50"
+      InstanceType: t2.micro
+      KeyName: "paris-abdelrhman-key"
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
