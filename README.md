@@ -10,7 +10,7 @@
 ## Steps to define resources
 > - Create the virtual private cloud (VPC) and its CIDR block.
 > - Define one public subnet (apply auto assign for public ip) and one private subnet / each subnet will be in a different availability zone.
-> - Create security group that will be attach for the instance. 
+> - Create security group that will be attached to the instance. 
 > - Create internet gateway.
 > - Build route table and create routing record for the gateway.
 > - Link the route table to the public subnet.
